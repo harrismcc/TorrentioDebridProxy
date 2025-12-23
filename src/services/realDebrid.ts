@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { createLogger } from "../utils/logger";
 import { logHttpRequest, logHttpResponse, logHttpError } from "../utils/httpLogger";
+import { forwardStreamHeaders } from "../utils/headers";
 
 const logger = createLogger("realDebrid");
 
@@ -149,13 +150,68 @@ export async function tryProxyStreamWithFallback(
           statusCode: proxyResp.status,
           contentLength: proxyResp.headers.get("content-length"),
           contentType: proxyResp.headers.get("content-type"),
+          acceptRanges: proxyResp.headers.get("accept-ranges"),
+          contentRange: proxyResp.headers.get("content-range"),
+          transferEncoding: proxyResp.headers.get("transfer-encoding"),
+          connection: proxyResp.headers.get("connection"),
+          allHeaders: Object.fromEntries(proxyResp.headers.entries()),
+          requestRange: rangeHeader,
           duration: fetchDuration,
         },
         "Real-Debrid stream fetch successful, starting proxy"
       );
 
       res.status(proxyResp.status);
-      proxyResp.headers.forEach((val, key) => res.setHeader(key, val));
+      const headerResult = forwardStreamHeaders(
+        proxyResp.headers,
+        res,
+        proxyResp.status,
+        rangeHeader,
+        logger
+      );
+
+      // Log header processing results
+      logger.debug(
+        {
+          remotePath,
+          forwarded: headerResult.forwarded,
+          blocked: headerResult.blocked,
+          added: headerResult.added,
+          warnings: headerResult.warnings,
+        },
+        "Headers processed for client response"
+      );
+
+      // Log warnings prominently if present
+      if (headerResult.warnings.length > 0) {
+        logger.warn(
+          { remotePath, warnings: headerResult.warnings },
+          "Header forwarding completed with warnings - potential player compatibility issues"
+        );
+      }
+
+      // Validate critical streaming headers before starting data transfer
+      const acceptRanges = res.getHeader("Accept-Ranges");
+      const contentRange = res.getHeader("Content-Range");
+
+      if (!acceptRanges) {
+        logger.error(
+          { remotePath, statusCode: proxyResp.status },
+          "FATAL: Accept-Ranges header not set - Infuse and other players will likely fail"
+        );
+      }
+
+      if (rangeHeader && proxyResp.status === 206 && !contentRange) {
+        logger.error(
+          {
+            remotePath,
+            requestRange: rangeHeader,
+            responseStatus: 206,
+            sentHeaders: Object.keys(res.getHeaders()),
+          },
+          "FATAL: Range request returned 206 but Content-Range header missing - demuxing will fail"
+        );
+      }
 
       const TIMEOUT_MS = 5 * 60 * 1000;
       let timeout: Timer = setTimeout(() => {
