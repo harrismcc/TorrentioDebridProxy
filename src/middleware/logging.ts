@@ -59,14 +59,19 @@ export const loggingMiddleware = pinoHttp({
         remotePort: req.remotePort,
       };
     },
-    res: (res) => ({
-      statusCode: res.statusCode,
-      headers: {
-        "content-type": res.getHeader("content-type"),
-        "content-length": res.getHeader("content-length"),
-        "x-request-id": res.getHeader("x-request-id"),
-      },
-    }),
+    res: (res) => {
+      // In pino-http v9, the response object passed to serializers
+      // is a simplified object with headers as a plain object, not Express Response
+      const headers = (res as any).headers || {};
+      return {
+        statusCode: res.statusCode,
+        headers: {
+          "content-type": headers["content-type"],
+          "content-length": headers["content-length"],
+          "x-request-id": headers["x-request-id"],
+        },
+      };
+    },
   },
 
   // Don't log successful static asset requests at info level
