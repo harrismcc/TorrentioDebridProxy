@@ -74,6 +74,41 @@ If set, all incoming requests must include this key as a query parameter:
   Addon URL:  
   `https://stremio-proxy.yourdomain.com/manifest.json?api_key=mysecurekey`
 
+---
+
+## Docker
+
+### Building the Docker Image
+
+To build the Docker image locally:
+
+```bash
+docker build -t torrentiodebridproxy .
+```
+
+### Running with Docker
+
+Run the container with the required environment variables:
+
+```bash
+docker run -d \
+  --name torrentio-debrid-proxy \
+  -p 13470:13470 \
+  -e PROXY_SERVER_URL=https://your-proxy-url.com \
+  -e TORRENTIO_URL=https://torrentio.strem.fun/your-config/manifest.json \
+  -e API_KEY=your_secure_key \
+  torrentiodebridproxy
+```
+
+**Required environment variables:**
+- `PROXY_SERVER_URL` - The publicly accessible URL where this addon will be running
+- `TORRENTIO_URL` - Your personalized Torrentio addon URL
+
+**Optional environment variables:**
+- `API_KEY` - Require an API key for all requests (recommended for security)
+- `PORT` - Internal port (default: 13470)
+
+---
 
 ### Option 1: Docker (Recommended)
 

@@ -3,11 +3,11 @@ import type { StremioManifest } from "../types";
 import { respond } from "../utils/response";
 
 export const MANIFEST: StremioManifest = {
-  id: "org.custom.torrentio-debrid-proxy",
+  id: "org.custom.socks-my-rocks-debrid-proxy",
   version: "1.0.0",
-  name: "Torrentio Debrid Proxy",
+  name: "Socks My Rocks Debrid Proxy",
   description:
-    "Streams via Torrentio with Real-Debrid, proxied through your own server.",
+    "Socks My Rocks Debrid Proxy - Proxies Real-Debrid streaming links from Torrentio instance through the SMR server.",
   types: ["movie", "series"],
   resources: ["stream"],
   catalogs: [],
