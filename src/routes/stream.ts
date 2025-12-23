@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
 import type { StremioStream, StreamResponse } from "../types";
 import { config } from "../utils/config";
 import { respond } from "../utils/response";
@@ -14,7 +14,7 @@ const logger = createLogger("streamHandler");
 
 export async function streamHandler(req: Request, res: Response): Promise<void> {
   const { type, id } = req.params;
-  const requestId = (req as any).id;
+  const requestId = req.id;
 
   logger.info(
     { type, id, requestId },
@@ -28,14 +28,16 @@ export async function streamHandler(req: Request, res: Response): Promise<void> 
     // Log outgoing request to Torrentio
     logHttpRequest(logger, "GET", apiUrl, { type, id });
 
-    const { data } = await axios.get<TorrentioResponse>(apiUrl, {
+    const response: AxiosResponse<TorrentioResponse> = await axios.get<TorrentioResponse>(apiUrl, {
       timeout: 10000, // 10 second timeout
     });
 
-    // Log successful response
-    logHttpResponse(logger, "GET", apiUrl, { status: 200 } as any, startTime, {
-      streamCount: data.streams?.length || 0,
+    // Log successful response with actual status from axios
+    logHttpResponse(logger, "GET", apiUrl, response, startTime, {
+      streamCount: response.data.streams?.length || 0,
     });
+
+    const data = response.data;
 
     const streams = (data.streams || []).map((stream) => {
       if (!stream.url.includes("/realdebrid/")) return stream;

@@ -1,5 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 
+// Augment Express Request to include properties added by our middleware
+declare global {
+  namespace Express {
+    interface Request {
+      startTime?: number;
+    }
+  }
+}
+
 export interface StremioManifest {
   id: string;
   version: string;

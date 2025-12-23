@@ -3,6 +3,9 @@ import pinoHttp from "pino-http";
 import { logger } from "../utils/logger";
 import { randomUUID } from "crypto";
 
+// Import types to ensure Express augmentation is applied
+import "../types";
+
 // Create pino-http middleware with custom configuration
 export const loggingMiddleware = pinoHttp({
   logger,
@@ -34,22 +37,28 @@ export const loggingMiddleware = pinoHttp({
   },
 
   // Serialize request/response
+  // Note: pino-http's req serializer receives a different object than Express Request,
+  // so we access Express-specific properties via the raw property when available
   serializers: {
-    req: (req) => ({
-      id: req.id,
-      method: req.method,
-      url: req.url,
-      path: (req as any).path,
-      query: (req as any).query,
-      params: (req as any).params,
-      headers: {
-        "user-agent": req.headers["user-agent"],
-        range: req.headers["range"],
-        referer: req.headers["referer"],
-      },
-      remoteAddress: req.remoteAddress,
-      remotePort: req.remotePort,
-    }),
+    req: (req) => {
+      // pino-http provides raw Express request via req.raw when available
+      const rawReq = (req as any).raw || req;
+      return {
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        path: rawReq.path,
+        query: rawReq.query,
+        params: rawReq.params,
+        headers: {
+          "user-agent": req.headers["user-agent"],
+          range: req.headers["range"],
+          referer: req.headers["referer"],
+        },
+        remoteAddress: req.remoteAddress,
+        remotePort: req.remotePort,
+      };
+    },
     res: (res) => ({
       statusCode: res.statusCode,
       headers: {
@@ -72,6 +81,6 @@ export function requestTimingMiddleware(
   res: Response,
   next: NextFunction
 ): void {
-  (req as any).startTime = Date.now();
+  req.startTime = Date.now();
   next();
 }

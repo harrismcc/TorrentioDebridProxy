@@ -8,8 +8,9 @@ import { resolveHandler } from "./routes/resolve";
 import { landingHandler } from "./routes/landing";
 import { logger, createLogger } from "./utils/logger";
 
-// Create application logger
+// Create application loggers (at module level for efficiency)
 const appLogger = createLogger("app");
+const errorLogger = createLogger("express-error");
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error: Error) => {
@@ -28,13 +29,12 @@ process.on("uncaughtException", (error: Error) => {
 });
 
 // Handle unhandled promise rejections
-process.on("unhandledRejection", (reason: unknown, promise: Promise<unknown>) => {
+process.on("unhandledRejection", (reason: unknown) => {
   const error = reason instanceof Error ? reason : new Error(String(reason));
 
   appLogger.fatal(
     {
       err: error,
-      promise: promise.toString(),
       type: "unhandledRejection",
     },
     "Unhandled promise rejection detected - shutting down"
@@ -72,8 +72,6 @@ app.get("/resolve/realdebrid/*", resolveHandler);
 
 // Express error handling middleware (must be after all routes)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  const errorLogger = createLogger("express-error");
-
   errorLogger.error(
     {
       err,

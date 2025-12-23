@@ -23,7 +23,7 @@ export function authMiddleware(
         ip: req.ip,
         userAgent: req.get("user-agent"),
         hasApiKey: !!req.query.api_key,
-        requestId: (req as any).id,
+        requestId: req.id,
       },
       "Access denied: incorrect or missing API key"
     );
@@ -37,7 +37,7 @@ export function authMiddleware(
   logger.debug(
     {
       path: req.originalUrl,
-      requestId: (req as any).id,
+      requestId: req.id,
     },
     "Authentication successful"
   );

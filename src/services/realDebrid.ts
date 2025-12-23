@@ -40,7 +40,9 @@ export async function resolveRDUrl(
     logger.info(
       {
         torrentioUrl,
-        redirectedUrl: redirectedUrl.substring(0, 100) + "...", // Truncate for logs
+        redirectedUrl: redirectedUrl.length > 100
+          ? redirectedUrl.substring(0, 100) + "..."
+          : redirectedUrl,
         duration,
         cached: false,
       },

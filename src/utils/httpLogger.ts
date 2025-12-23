@@ -32,8 +32,8 @@ export function logHttpResponse(
 ) {
   const duration = Date.now() - startTime;
 
-  // Handle both Axios and Fetch responses
-  const statusCode = "status" in response ? response.status : response.status;
+  // Both Axios and Fetch responses have status property
+  const statusCode = response.status;
   const statusText = "statusText" in response ? response.statusText : "";
 
   logger.info(
